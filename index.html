@@ -3,9 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Ang Liang Tze's Portfolio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .skill-card {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .skill-card img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        </style>
 </head>
 <body>
-    <h1>Test Document</h1>
+    <header>
+        <div class="container">
+            <nav>
+                <ul>
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#projects">Projects</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section id="home" class="hero">
+            <div class="container">
+                <h1>Ang Liang Tze</h1>
+                <p>Futuristic Entrepreneur and Engineer</p>
+                <br>
+                <a href="#contact" class="btn">Get in Touch</a>
+            </div>
+        </section>
+
+        <section id="about" class="container">
+            <h2>
+                Meet Liang Tze</h2>
+            <p>
+                On the first day of school, some of his friends thought he would be that quiet boy sitting in the corner of the classroom. However, all that was about to change: he was an extroverted student studying at the School of Science and Technology. Moving forward in his first year, he founded Kids Learn Code in 2022 with a group of close friends, with the mission to help underprivileged children learn to code for free. 
+                
+                <br><br>
+                He tries to volunteer at libraries while planning and participating in teaching sessions at Kids Learn Code while juggling his schoolwork. This is his way of taking a break and relaxing, as all these bring a sense of joy to him. In addition, he has a strong interest in and enthusiasm for transportation, coding and even photography, which he does in his other free time. 
+                <br><br>
+                
+                In the future, he wants to be able to pursue his passion for engineering in civil engineering, helping to improve the transportation system in Singapore. He may also consider becoming a teacher to empower and change lives. He firmly believes that a person's life is highly dependent on the teacher, as they are the ones that shape their habits. </p>
+        </section>
+
+        
+        
+        <div class="skills-grid">
+            <div class="skill-card">
+                <img src="/images/presenting.png" alt="People-oriented presentation">
+                <h2>PEOPLE-ORIENTED</h2>
+                <p>I love to be with people and talk to people I see, and try to initiate a conversation.</p>
+            </div>
+    
+            <div class="skill-card">
+                <img src="/images/photography.png" alt="Photography of architecture">
+                <h2>PHOTOGRAPHY</h2>
+                <p>I love to take photos of things around me, like trains, greenery and many others.</p>
+            </div>
+    
+            <div class="skill-card">
+                <img src="/images/landtransport.png" alt="Transportation model">
+                <h2>TRANSPORTATION</h2>
+                <p>I hope to be able to pursue a career in Land Transport, where I can help improve the community to allow Public Transport to be more accessible and greener for all.</p>
+            </div>
+    
+            <div class="skill-card">
+                <img src="/images/teaching.png" alt="Teaching students">
+                <h2>TEACHING</h2>
+                <p>Another career alternative for me, I believe in the need of proper and fundamental education for children. I hope to be able to make learning fun and meaningful for my students.</p>
+            </div>
+        </div>
+
+        <section id="contact" class="container">
+            <h2>Contact Me</h2>
+            <form>
+                <input type="text" placeholder="Your Name" required>
+                <input type="email" placeholder="Your Email" required>
+                <textarea placeholder="Your Message" required></textarea>
+                <button type="submit" class="btn">Send Message</button>
+            </form>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2023 John Doe. All rights reserved.</p>
+        </div>
+    </footer>
 </body>
 </html>
+<style>
+    body {
+        font-family: 'Roboto', sans-serif;
+        line-height: 1.6;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    header {
+
+        color: #fff;
+        padding: 1rem 0;
+    }
+
+    nav ul {
+        list-style: none;
+        display: flex;
+        justify-content: space-around;
+    }
+
+    nav a {
+        color: #fff;
+        text-decoration: none;
+    }
+
+    .hero {
+        color: #fff;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+
+    .hero h1 {
+        font-size: 3rem;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    @media (max-width: 768px) {
+        .skills-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .hero h1 {
+            font-size: 2rem;
+        }
+
+        nav ul {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .container {
+            padding: 0 1rem;
+        }
+    }
+</style>
