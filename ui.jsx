@@ -407,52 +407,200 @@ function BottomSheet({ open, onClose, height, children }) {
   );
 }
 
-function MenuItemRow({ item, onAdd }) {
+function MenuItemRow({ item, onAdd, onVerify }) {
   const t = useTheme();
   const [added, setAdded] = React.useState(false);
-  return React.createElement('div', {
-    style: {
-      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      padding: '12px 0', borderBottom: `1px solid ${t.border}`,
+  const [verifyOpen, setVerifyOpen] = React.useState(false);
+  const [verifyStep, setVerifyStep] = React.useState('options'); // 'options' | 'price' | 'done' | 'error'
+  const [newPrice, setNewPrice] = React.useState('');
+  const [submitting, setSubmitting] = React.useState(false);
+
+  const resetVerify = () => { setVerifyOpen(false); setVerifyStep('options'); setNewPrice(''); };
+
+  const handleConfirm = async (e) => {
+    e.stopPropagation();
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await onVerify(item, 'confirmed', item.price);
+      setVerifyStep('done');
+    } catch (_) {
+      setVerifyStep('error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleReport = async (e) => {
+    e.stopPropagation();
+    const p = parseFloat(newPrice);
+    if (!newPrice || isNaN(p) || p <= 0 || submitting) return;
+    setSubmitting(true);
+    try {
+      await onVerify(item, 'changed', p);
+      setVerifyStep('done');
+    } catch (_) {
+      setVerifyStep('error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const verifyColor = t.verified || '#22c55e';
+
+  return React.createElement('div', { style: { borderBottom: `1px solid ${t.border}` } },
+    // Main row
+    React.createElement('div', {
+      style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0' },
     },
-  },
-    React.createElement('div', { style: { flex: 1, minWidth: 0 } },
-      React.createElement('div', {
-        style: {
-          display: 'flex', alignItems: 'center', gap: 6,
+      React.createElement('div', { style: { flex: 1, minWidth: 0 } },
+        React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 6 } },
+          React.createElement('span', {
+            style: { fontSize: 14, fontWeight: 500, color: t.text, fontFamily: t.font.body },
+          }, item.name),
+          item.verified && React.createElement('svg', {
+            width: 12, height: 12, viewBox: '0 0 20 20', fill: verifyColor,
+          },
+            React.createElement('path', { d: 'M10 0l2.4 4.8 5.3.8-3.8 3.7.9 5.3L10 12.2 5.2 14.6l.9-5.3L2.3 5.6l5.3-.8L10 0z' })
+          )
+        ),
+        React.createElement('div', {
+          style: { fontSize: 11, color: t.textTertiary, fontFamily: t.font.body, marginTop: 2 },
+        }, item.portion ? `${item.portion} · Updated ${item.lastUpdated}` : `Updated ${item.lastUpdated}`)
+      ),
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 } },
+        React.createElement(PriceTag, { price: item.price }),
+        onVerify && React.createElement('button', {
+          onClick: (e) => { e.stopPropagation(); if (verifyOpen) resetVerify(); else setVerifyOpen(true); },
+          title: 'Verify price',
+          style: {
+            width: 24, height: 24, borderRadius: 6,
+            border: `1.5px solid ${verifyOpen ? verifyColor + '60' : t.border}`,
+            background: verifyOpen ? verifyColor + '15' : 'none',
+            color: verifyOpen ? verifyColor : t.textTertiary,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all 0.2s',
+          },
         },
-      },
-        React.createElement('span', {
-          style: { fontSize: 14, fontWeight: 500, color: t.text, fontFamily: t.font.body },
-        }, item.name),
-        item.verified && React.createElement('svg', {
-          width: 12, height: 12, viewBox: '0 0 20 20', fill: t.verified,
-        },
-          React.createElement('path', { d: 'M10 0l2.4 4.8 5.3.8-3.8 3.7.9 5.3L10 12.2 5.2 14.6l.9-5.3L2.3 5.6l5.3-.8L10 0z' })
+          React.createElement('svg', { width: 11, height: 11, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.5 },
+            React.createElement('path', { d: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' })
+          )
+        ),
+        onAdd && React.createElement('button', {
+          onClick: (e) => { e.stopPropagation(); setAdded(!added); onAdd(item); },
+          style: {
+            width: 28, height: 28, borderRadius: 8,
+            border: added ? 'none' : `1.5px solid ${t.border}`,
+            background: added ? t.primary : 'none',
+            color: added ? '#fff' : t.textTertiary,
+            fontSize: 16, fontWeight: 500, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all 0.2s',
+          },
+        }, added ? '✓' : '+')
+      )
+    ),
+    // Inline verification panel
+    verifyOpen && React.createElement('div', {
+      style: { paddingBottom: 12, paddingTop: 2 },
+    },
+      verifyStep === 'options' && React.createElement('div', null,
+        React.createElement('div', {
+          style: { fontSize: 10, fontWeight: 700, color: t.textTertiary, fontFamily: t.font.body, letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 7 },
+        }, 'Is this price still accurate?'),
+        React.createElement('div', { style: { display: 'flex', gap: 6 } },
+          React.createElement('button', {
+            onClick: handleConfirm, disabled: submitting,
+            style: {
+              flex: 1, padding: '7px 6px', borderRadius: 9,
+              background: verifyColor + '15', border: `1.5px solid ${verifyColor}40`,
+              color: verifyColor, fontSize: 12, fontWeight: 700,
+              fontFamily: t.font.body, cursor: 'pointer',
+            },
+          }, submitting ? '...' : `✓ Still $${(item.price || 0).toFixed(2)}`),
+          React.createElement('button', {
+            onClick: (e) => { e.stopPropagation(); setVerifyStep('price'); },
+            style: {
+              flex: 1, padding: '7px 6px', borderRadius: 9,
+              background: t.primary + '12', border: `1.5px solid ${t.primary}30`,
+              color: t.primary, fontSize: 12, fontWeight: 700,
+              fontFamily: t.font.body, cursor: 'pointer',
+            },
+          }, 'Changed →'),
+          React.createElement('button', {
+            onClick: (e) => { e.stopPropagation(); resetVerify(); },
+            style: {
+              width: 30, padding: '7px', borderRadius: 9,
+              background: 'none', border: `1.5px solid ${t.border}`,
+              color: t.textTertiary, fontSize: 13, fontFamily: t.font.body, cursor: 'pointer',
+            },
+          }, '✕')
         )
       ),
-      React.createElement('div', {
-        style: {
-          fontSize: 11, color: t.textTertiary, fontFamily: t.font.body, marginTop: 2,
-        },
-      }, item.portion ? `${item.portion} · Updated ${item.lastUpdated}` : `Updated ${item.lastUpdated}`)
-    ),
-    React.createElement('div', {
-      style: { display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 },
-    },
-      React.createElement(PriceTag, { price: item.price }),
-      onAdd && React.createElement('button', {
-        onClick: (e) => { e.stopPropagation(); setAdded(!added); onAdd(item); },
-        style: {
-          width: 28, height: 28, borderRadius: 8,
-          border: added ? 'none' : `1.5px solid ${t.border}`,
-          background: added ? t.primary : 'none',
-          color: added ? '#fff' : t.textTertiary,
-          fontSize: 16, fontWeight: 500, cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          transition: 'all 0.2s',
-        },
-      }, added ? '✓' : '+')
+      verifyStep === 'price' && React.createElement('div', null,
+        React.createElement('div', {
+          style: { fontSize: 10, fontWeight: 700, color: t.textTertiary, fontFamily: t.font.body, letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 7 },
+        }, "What's the new price?"),
+        React.createElement('div', { style: { display: 'flex', gap: 6 } },
+          React.createElement('div', {
+            style: {
+              display: 'flex', alignItems: 'center', flex: 1,
+              background: t.surface, border: `1.5px solid ${t.border}`, borderRadius: 9, padding: '0 10px',
+            },
+          },
+            React.createElement('span', { style: { color: t.textTertiary, fontSize: 13, marginRight: 3, fontFamily: t.font.body } }, '$'),
+            React.createElement('input', {
+              type: 'number', step: '0.10', min: '0.10', value: newPrice,
+              onChange: (e) => setNewPrice(e.target.value),
+              placeholder: (item.price || 0).toFixed(2),
+              style: {
+                flex: 1, border: 'none', background: 'none',
+                fontSize: 14, fontWeight: 600, color: t.text,
+                fontFamily: t.font.body, outline: 'none', padding: '8px 0',
+              },
+            })
+          ),
+          React.createElement('button', {
+            onClick: handleReport,
+            disabled: submitting || !newPrice || parseFloat(newPrice) <= 0,
+            style: {
+              padding: '7px 14px', borderRadius: 9,
+              background: parseFloat(newPrice) > 0 ? t.primary : t.border,
+              border: 'none', color: '#fff',
+              fontSize: 12, fontWeight: 700, fontFamily: t.font.body,
+              cursor: parseFloat(newPrice) > 0 && !submitting ? 'pointer' : 'not-allowed',
+              transition: 'background 0.2s',
+            },
+          }, submitting ? '...' : 'Report'),
+          React.createElement('button', {
+            onClick: (e) => { e.stopPropagation(); setVerifyStep('options'); setNewPrice(''); },
+            style: {
+              width: 30, padding: '7px', borderRadius: 9,
+              background: 'none', border: `1.5px solid ${t.border}`,
+              color: t.textTertiary, fontSize: 13, fontFamily: t.font.body, cursor: 'pointer',
+            },
+          }, '←')
+        )
+      ),
+      verifyStep === 'done' && React.createElement('div', {
+        style: { display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' },
+      },
+        React.createElement('span', { style: { fontSize: 15 } }, '✅'),
+        React.createElement('span', { style: { fontSize: 12, fontWeight: 700, color: verifyColor, fontFamily: t.font.body } }, 'Thanks! Your report helps keep prices accurate.'),
+        React.createElement('button', {
+          onClick: (e) => { e.stopPropagation(); resetVerify(); },
+          style: { marginLeft: 'auto', fontSize: 11, color: t.textTertiary, background: 'none', border: 'none', cursor: 'pointer', fontFamily: t.font.body, flexShrink: 0 },
+        }, 'Close')
+      ),
+      verifyStep === 'error' && React.createElement('div', {
+        style: { display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' },
+      },
+        React.createElement('span', { style: { fontSize: 12, color: t.textTertiary, fontFamily: t.font.body } }, 'Could not submit — please try again.'),
+        React.createElement('button', {
+          onClick: (e) => { e.stopPropagation(); setVerifyStep('options'); },
+          style: { marginLeft: 'auto', fontSize: 11, color: t.primary, background: 'none', border: 'none', cursor: 'pointer', fontFamily: t.font.body },
+        }, 'Retry')
+      )
     )
   );
 }

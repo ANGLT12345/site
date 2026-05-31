@@ -277,6 +277,23 @@ function PlaceDetailScreen({ place, onBack, savedIds, onToggleSave }) {
     });
   };
 
+  const handleVerify = async (item, type, reportedPrice) => {
+    const { data: { session } } = await db.auth.getSession();
+    const payload = {
+      menu_item_id: item.id,
+      place_id: place.id,
+      status: 'pending',
+      user_id: session?.user?.id ?? null,
+    };
+    if (type === 'confirmed') {
+      payload.verified_price = item.price;
+    } else {
+      payload.reported_price = reportedPrice;
+    }
+    const { error } = await db.from('price_verifications').insert(payload);
+    if (error) throw error;
+  };
+
   const foodIcon = (place.cuisine || []).includes('Indian') ? '🫓' : (place.cuisine || []).includes('Malay') ? '🍜' : '🍚';
 
   return React.createElement('div', {
@@ -441,7 +458,7 @@ function PlaceDetailScreen({ place, onBack, savedIds, onToggleSave }) {
               style: { background: t.surface, borderRadius: 14, padding: '4px 14px', marginTop: 8, border: `1px solid ${t.border}` },
             },
               menu[activeSection] && menu[activeSection].items.map((item, i) =>
-                React.createElement(MenuItemRow, { key: i, item, onAdd: handleAddItem })
+                React.createElement(MenuItemRow, { key: i, item, onAdd: handleAddItem, onVerify: handleVerify })
               )
             )
           )
