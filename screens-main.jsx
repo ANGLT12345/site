@@ -73,6 +73,7 @@ function StylizedMap({ places, budget, selectedPin, onPinClick }) {
 
 function HomeScreen({ places: propPlaces, onSelectPlace, budget, onBudgetChange, budgetMode, savedIds, onToggleSave }) {
   const t = useTheme();
+  const isDesktop = useIsDesktop();
   const [viewMode, setViewMode] = React.useState('map');
   const [searchQuery, setSearchQuery] = React.useState('');
   const [activeFilters, setActiveFilters] = React.useState([]);
@@ -124,6 +125,125 @@ function HomeScreen({ places: propPlaces, onSelectPlace, budget, onBudgetChange,
     { label: 'Halal food', action: () => toggleFilter('Halal') },
   ];
 
+  // Desktop two-column layout
+  if (isDesktop) {
+    return React.createElement('div', {
+      style: { display: 'flex', height: '100%', background: t.bg, overflow: 'hidden' },
+    },
+      // Left panel: search + filters + budget + scrollable list
+      React.createElement('div', {
+        style: {
+          width: 420, flexShrink: 0, display: 'flex', flexDirection: 'column',
+          background: t.bg, borderRight: `1px solid ${t.border}`, overflow: 'hidden',
+        },
+      },
+        // Controls: search, filters, budget
+        React.createElement('div', {
+          style: { padding: '16px 16px 0', flexShrink: 0 },
+        },
+          React.createElement(SearchBar, { value: searchQuery, onChange: setSearchQuery }),
+          React.createElement('div', { style: { marginTop: 8, overflow: 'hidden' } },
+            React.createElement(FilterChips, { chips: allFilters, active: activeFilters, onToggle: toggleFilter })
+          ),
+          React.createElement('div', {
+            style: {
+              marginTop: 8, padding: '10px 14px', background: t.surface,
+              borderRadius: 14, boxShadow: `0 2px 8px ${t.shadow}`, border: `1px solid ${t.border}`,
+            },
+          },
+            budgetMode === 'presets'
+              ? React.createElement('div', null,
+                  React.createElement('div', {
+                    style: { fontSize: 12, fontWeight: 600, color: t.textSecondary, fontFamily: t.font.body, marginBottom: 8 },
+                  }, 'Max budget per meal'),
+                  React.createElement(BudgetPresets, { value: budget, onChange: onBudgetChange })
+                )
+              : React.createElement(BudgetSlider, { value: budget, onChange: onBudgetChange, max: 50 })
+          ),
+        ),
+        // Sort + count bar
+        React.createElement('div', {
+          style: {
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '10px 16px 6px', flexShrink: 0,
+          },
+        },
+          React.createElement('span', {
+            style: { fontSize: 13, color: t.textSecondary, fontFamily: t.font.body },
+          }, `${filteredPlaces.length} places found`),
+          React.createElement('select', {
+            value: sortBy, onChange: e => setSortBy(e.target.value),
+            style: { fontSize: 12, fontWeight: 600, color: t.primary, background: 'none', border: 'none', fontFamily: t.font.body, cursor: 'pointer' },
+          },
+            SORT_OPTIONS.map(o =>
+              React.createElement('option', { key: o.key, value: o.key }, o.label)
+            )
+          )
+        ),
+        // Scrollable place list
+        React.createElement('div', {
+          style: { flex: 1, overflow: 'auto', padding: '0 16px 16px' },
+        },
+          React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 10 } },
+            filteredPlaces.map(place =>
+              React.createElement(PlaceCard, {
+                key: place.id, place,
+                onClick: () => onSelectPlace(place),
+                variant: 'standard',
+                isSaved: savedIds && savedIds.has(place.id),
+                onSave: onToggleSave ? () => onToggleSave(place.id) : null,
+              })
+            ),
+            filteredPlaces.length === 0 && React.createElement('div', {
+              style: { textAlign: 'center', padding: '40px 20px', color: t.textTertiary, fontFamily: t.font.body },
+            },
+              React.createElement('div', { style: { fontSize: 32, marginBottom: 12 } }, '🔍'),
+              React.createElement('div', { style: { fontSize: 15, fontWeight: 600, color: t.text } }, 'No places found leh'),
+              React.createElement('div', { style: { fontSize: 13, marginTop: 4 } }, 'Try increasing your budget or removing filters')
+            )
+          )
+        )
+      ),
+      // Right panel: map
+      React.createElement('div', {
+        style: { flex: 1, position: 'relative', overflow: 'hidden' },
+      },
+        React.createElement(StylizedMap, { places: allPlaces, budget, selectedPin, onPinClick: handlePinClick }),
+        React.createElement('div', {
+          style: { position: 'absolute', bottom: 16, left: 16, right: 16, display: 'flex', gap: 8, zIndex: 10 },
+        },
+          suggestions.map((s, i) =>
+            React.createElement(SuggestionPill, { key: i, label: s.label, onClick: s.action })
+          )
+        ),
+        React.createElement(BottomSheet, {
+          open: !!sheetPlace, onClose: () => { setSheetPlace(null); setSelectedPin(null); },
+          height: '38%',
+        },
+          sheetPlace && React.createElement('div', null,
+            React.createElement(PlaceCard, {
+              place: sheetPlace,
+              onClick: () => onSelectPlace(sheetPlace),
+              variant: 'featured',
+              isSaved: savedIds && savedIds.has(sheetPlace.id),
+              onSave: onToggleSave ? () => onToggleSave(sheetPlace.id) : null,
+            }),
+            React.createElement('button', {
+              onClick: () => onSelectPlace(sheetPlace),
+              style: {
+                width: '100%', marginTop: 12, padding: '12px',
+                background: t.primary, color: '#fff', border: 'none',
+                borderRadius: 12, fontSize: 14, fontWeight: 700,
+                fontFamily: t.font.heading, cursor: 'pointer',
+              },
+            }, 'View Menu & Prices')
+          )
+        )
+      )
+    );
+  }
+
+  // Mobile layout (unchanged)
   return React.createElement('div', {
     style: { display: 'flex', flexDirection: 'column', height: '100%', background: t.bg, position: 'relative' },
   },
