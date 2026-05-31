@@ -233,7 +233,7 @@ function StarRating({ rating, size }) {
   );
 }
 
-function PlaceCard({ place, onClick, variant, density }) {
+function PlaceCard({ place, onClick, variant, density, isSaved, onSave }) {
   const t = useTheme();
   const [hovered, setHovered] = React.useState(false);
   const isCompact = variant === 'compact' || density === 'compact';
@@ -247,7 +247,7 @@ function PlaceCard({ place, onClick, variant, density }) {
     borderRadius: isFeatured ? 16 : 14,
     cursor: 'pointer', transition: 'all 0.2s',
     border: `1px solid ${t.border}`,
-    overflow: 'hidden',
+    overflow: 'hidden', position: 'relative',
   };
 
   const thumbStyle = {
@@ -260,7 +260,7 @@ function PlaceCard({ place, onClick, variant, density }) {
     position: 'relative', overflow: 'hidden',
   };
 
-  const foodIcon = place.cuisine.includes('Indian') ? '🫓' : place.cuisine.includes('Malay') ? '🍜' : '🍚';
+  const foodIcon = (place.cuisine || []).includes('Indian') ? '🫓' : (place.cuisine || []).includes('Malay') ? '🍜' : '🍚';
 
   return React.createElement('div', {
     style: cardStyle, onClick,
@@ -270,8 +270,24 @@ function PlaceCard({ place, onClick, variant, density }) {
     React.createElement('div', { style: thumbStyle },
       React.createElement('span', { style: { fontSize: isFeatured ? 36 : isCompact ? 20 : 24, opacity: 0.6 } }, foodIcon),
       isFeatured && place.verified && React.createElement(VerifiedBadge, {
-        style: { position: 'absolute', top: 8, right: 8, background: 'rgba(255,255,255,0.9)' },
-      })
+        style: { position: 'absolute', top: 8, left: 8, background: 'rgba(255,255,255,0.9)' },
+      }),
+      // Save button on thumb
+      onSave && React.createElement('button', {
+        onClick: (e) => { e.stopPropagation(); onSave(); },
+        style: {
+          position: 'absolute', top: 8, right: 8,
+          width: 28, height: 28, borderRadius: 8,
+          background: isSaved ? t.primary : 'rgba(255,255,255,0.85)',
+          border: 'none', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'all 0.2s', backdropFilter: 'blur(4px)',
+        },
+      },
+        React.createElement('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: isSaved ? '#fff' : t.textSecondary },
+          React.createElement('path', { d: 'M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z' })
+        )
+      )
     ),
     React.createElement('div', {
       style: {
