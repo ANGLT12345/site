@@ -400,7 +400,7 @@ function ProfileScreen({ user, profile, savedCount, onLogin, onLogout }) {
 
 function AuthModal({ onClose, onSuccess }) {
   const t = useTheme();
-  const [mode, setMode] = React.useState('login');
+  const [mode, setMode] = React.useState('login'); // 'login' | 'signup' | 'reset'
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [name, setName] = React.useState('');
@@ -408,22 +408,41 @@ function AuthModal({ onClose, onSuccess }) {
   const [message, setMessage] = React.useState('');
   const [isError, setIsError] = React.useState(false);
 
+  const switchMode = (m) => { setMode(m); setMessage(''); };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
     try {
-      if (mode === 'signup') {
-        const { error } = await db.auth.signUp({
+      if (mode === 'reset') {
+        const { error } = await db.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin + window.location.pathname,
+        });
+        if (error) throw error;
+        setIsError(false);
+        setMessage('Password reset link sent — check your email.');
+      } else if (mode === 'signup') {
+        const { data, error } = await db.auth.signUp({
           email, password,
           options: { data: { display_name: name || email.split('@')[0] } },
         });
         if (error) throw error;
-        setIsError(false);
-        setMessage('Check your email to confirm your account, then sign in.');
+        // If session is returned immediately, email confirmation is disabled — log in directly
+        if (data?.session) {
+          onSuccess();
+        } else {
+          setIsError(false);
+          setMessage('Account created! Check your email for a confirmation link, then sign in.');
+        }
       } else {
         const { error } = await db.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        if (error) {
+          if (error.message.toLowerCase().includes('invalid') || error.message.toLowerCase().includes('credentials')) {
+            throw new Error('Wrong email or password. Use "Forgot password?" to reset.');
+          }
+          throw error;
+        }
         onSuccess();
       }
     } catch (err) {
@@ -439,6 +458,13 @@ function AuthModal({ onClose, onSuccess }) {
     border: `1.5px solid ${t.border}`, borderRadius: 12,
     fontSize: 14, fontFamily: t.font.body, color: t.text,
     background: t.surfaceAlt, outline: 'none', boxSizing: 'border-box',
+  };
+
+  const titles = { login: 'Welcome back', signup: 'Create account', reset: 'Reset password' };
+  const subtitles = {
+    login: 'Sign in to save places and set budget alerts.',
+    signup: 'Join to save favourites and verify prices.',
+    reset: "Enter your email and we'll send a reset link.",
   };
 
   return React.createElement('div', {
@@ -463,12 +489,10 @@ function AuthModal({ onClose, onSuccess }) {
       }),
       React.createElement('h2', {
         style: { fontSize: 22, fontWeight: 800, color: t.text, fontFamily: t.font.heading, margin: '0 0 6px', letterSpacing: '-0.5px' },
-      }, mode === 'login' ? 'Welcome back' : 'Create account'),
+      }, titles[mode]),
       React.createElement('p', {
         style: { fontSize: 13, color: t.textSecondary, fontFamily: t.font.body, marginBottom: 20 },
-      }, mode === 'login'
-        ? 'Sign in to save places and set budget alerts.'
-        : 'Join to save favourites and verify prices.'),
+      }, subtitles[mode]),
 
       React.createElement('form', { onSubmit: handleSubmit },
         mode === 'signup' && React.createElement('input', {
@@ -481,11 +505,20 @@ function AuthModal({ onClose, onSuccess }) {
           onChange: e => setEmail(e.target.value), required: true,
           style: inputSt,
         }),
-        React.createElement('input', {
+        mode !== 'reset' && React.createElement('input', {
           type: 'password', placeholder: 'Password (min 6 chars)', value: password,
           onChange: e => setPassword(e.target.value), required: true,
           style: inputSt,
         }),
+        mode === 'login' && React.createElement('button', {
+          type: 'button',
+          onClick: () => switchMode('reset'),
+          style: {
+            background: 'none', border: 'none', padding: '0 0 10px',
+            color: t.primary, fontSize: 12, fontFamily: t.font.body,
+            cursor: 'pointer', display: 'block',
+          },
+        }, 'Forgot password?'),
         message && React.createElement('div', {
           style: {
             fontSize: 12, marginBottom: 12, padding: '8px 12px', borderRadius: 8,
@@ -503,18 +536,28 @@ function AuthModal({ onClose, onSuccess }) {
             fontSize: 15, fontWeight: 700, fontFamily: t.font.heading,
             cursor: loading ? 'not-allowed' : 'pointer',
           },
-        }, loading ? 'Please wait...' : mode === 'login' ? 'Sign in' : 'Create account'),
+        }, loading ? 'Please wait...' : mode === 'login' ? 'Sign in' : mode === 'signup' ? 'Create account' : 'Send reset link'),
       ),
 
-      React.createElement('button', {
-        onClick: () => { setMode(m => m === 'login' ? 'signup' : 'login'); setMessage(''); },
-        style: {
-          width: '100%', marginTop: 12, padding: '10px',
-          background: 'none', border: 'none',
-          color: t.textSecondary, fontSize: 13,
-          fontFamily: t.font.body, cursor: 'pointer',
-        },
-      }, mode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'),
+      mode !== 'reset'
+        ? React.createElement('button', {
+            onClick: () => switchMode(mode === 'login' ? 'signup' : 'login'),
+            style: {
+              width: '100%', marginTop: 12, padding: '10px',
+              background: 'none', border: 'none',
+              color: t.textSecondary, fontSize: 13,
+              fontFamily: t.font.body, cursor: 'pointer',
+            },
+          }, mode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Sign in')
+        : React.createElement('button', {
+            onClick: () => switchMode('login'),
+            style: {
+              width: '100%', marginTop: 12, padding: '10px',
+              background: 'none', border: 'none',
+              color: t.textSecondary, fontSize: 13,
+              fontFamily: t.font.body, cursor: 'pointer',
+            },
+          }, '← Back to sign in'),
     )
   );
 }
