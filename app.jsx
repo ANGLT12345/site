@@ -155,6 +155,9 @@ function AppContent() {
   },
     React.createElement(AppShell, {
       showNav, activeTab, onTabNav: handleTabNav, tw, setTweak,
+      user,
+      onLogin: () => setShowAuthModal(true),
+      onLogout: async () => { await db.auth.signOut(); },
       overlay: showAuthModal && React.createElement(AuthModal, {
         onClose: () => setShowAuthModal(false),
         onSuccess: () => setShowAuthModal(false),
@@ -165,8 +168,67 @@ function AppContent() {
   );
 }
 
-function AppShell({ showNav, activeTab, onTabNav, tw, setTweak, overlay, children }) {
+function AppShell({ showNav, activeTab, onTabNav, tw, setTweak, overlay, children, user, onLogin, onLogout }) {
   const t = useTheme();
+  const isDesktop = useIsDesktop();
+
+  if (isDesktop) {
+    return React.createElement(React.Fragment, null,
+      React.createElement('div', {
+        style: {
+          display: 'flex', height: '100%',
+          background: t.bg, fontFamily: t.font.body,
+          color: t.text, overflow: 'hidden',
+        },
+      },
+        showNav && React.createElement(SidebarNav, {
+          active: activeTab, onNavigate: onTabNav,
+          user, onLogin, onLogout,
+        }),
+        React.createElement('div', {
+          style: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' },
+        },
+          children,
+          overlay,
+        )
+      ),
+      React.createElement(TweaksPanel, null,
+        React.createElement(TweakSection, { label: 'Visual Theme' }),
+        React.createElement(TweakRadio, {
+          label: 'Color',
+          value: tw.theme,
+          options: ['chili', 'kaya', 'pandan', 'pasar'],
+          onChange: v => setTweak('theme', v),
+        }),
+        React.createElement(TweakRadio, {
+          label: 'Typography',
+          value: tw.font,
+          options: ['jakarta', 'space', 'outfit'],
+          onChange: v => setTweak('font', v),
+        }),
+        React.createElement(TweakSection, { label: 'Layout' }),
+        React.createElement(TweakRadio, {
+          label: 'Density',
+          value: tw.density,
+          options: ['compact', 'comfortable', 'spacious'],
+          onChange: v => setTweak('density', v),
+        }),
+        React.createElement(TweakSelect, {
+          label: 'Budget control',
+          value: tw.budgetMode,
+          options: ['slider', 'presets'],
+          onChange: v => setTweak('budgetMode', v),
+        }),
+        React.createElement(TweakSection, { label: 'Flow' }),
+        React.createElement(TweakToggle, {
+          label: 'Show onboarding',
+          value: tw.showOnboarding,
+          onChange: v => { setTweak('showOnboarding', v); if (v) window.location.reload(); },
+        }),
+      )
+    );
+  }
+
   return React.createElement(React.Fragment, null,
     React.createElement('div', {
       style: {

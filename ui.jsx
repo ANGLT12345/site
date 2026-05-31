@@ -619,8 +619,110 @@ function SuggestionPill({ label, onClick }) {
   }, label);
 }
 
+function useIsDesktop() {
+  const [v, setV] = React.useState(() => window.innerWidth >= 1024);
+  React.useEffect(() => {
+    const fn = () => setV(window.innerWidth >= 1024);
+    window.addEventListener('resize', fn);
+    return () => window.removeEventListener('resize', fn);
+  }, []);
+  return v;
+}
+
+function SidebarNav({ active, onNavigate, user, onLogin, onLogout }) {
+  const t = useTheme();
+  const tabs = [
+    { key: 'home', label: 'Home', icon: 'M12 3L2 12h3v8h5v-5h4v5h5v-8h3L12 3z' },
+    { key: 'search', label: 'Explore', icon: 'M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z' },
+    { key: 'saved', label: 'Saved', icon: 'M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z' },
+    { key: 'profile', label: 'Profile', icon: 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z' },
+  ];
+  return React.createElement('aside', {
+    style: {
+      width: 240, flexShrink: 0, background: t.surface,
+      borderRight: `1px solid ${t.border}`,
+      display: 'flex', flexDirection: 'column',
+      height: '100%',
+    },
+  },
+    // Logo
+    React.createElement('div', {
+      style: { padding: '20px 20px 16px', borderBottom: `1px solid ${t.border}` },
+    },
+      React.createElement('div', {
+        style: { fontSize: 22, fontWeight: 800, color: t.primary, fontFamily: t.font.heading, letterSpacing: '-0.5px' },
+      }, 'BiteBudget'),
+      React.createElement('div', {
+        style: { fontSize: 11, color: t.textTertiary, fontFamily: t.font.body, marginTop: 2 },
+      }, 'Singapore food prices')
+    ),
+    // Nav items
+    React.createElement('nav', {
+      style: { flex: 1, padding: '12px 12px', display: 'flex', flexDirection: 'column', gap: 2 },
+    },
+      tabs.map(tab => {
+        const isActive = active === tab.key;
+        return React.createElement('button', {
+          key: tab.key,
+          onClick: () => onNavigate(tab.key),
+          style: {
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '10px 12px', borderRadius: 12, border: 'none',
+            background: isActive ? `${t.primary}18` : 'none',
+            color: isActive ? t.primary : t.textSecondary,
+            cursor: 'pointer', textAlign: 'left',
+            fontSize: 14, fontWeight: isActive ? 700 : 500,
+            fontFamily: t.font.body, transition: 'all 0.15s',
+            width: '100%',
+          },
+        },
+          React.createElement('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'currentColor' },
+            React.createElement('path', { d: tab.icon })
+          ),
+          tab.label
+        );
+      })
+    ),
+    // User section
+    React.createElement('div', {
+      style: { padding: '16px 16px', borderTop: `1px solid ${t.border}` },
+    },
+      user
+        ? React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 10 } },
+            React.createElement('div', {
+              style: {
+                width: 34, height: 34, borderRadius: '50%',
+                background: t.primary, color: '#fff', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 13, fontWeight: 700, fontFamily: t.font.heading,
+              },
+            }, (user.email || 'U')[0].toUpperCase()),
+            React.createElement('div', { style: { flex: 1, minWidth: 0 } },
+              React.createElement('div', {
+                style: { fontSize: 12, fontWeight: 600, color: t.text, fontFamily: t.font.body, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+              }, user.email),
+              React.createElement('button', {
+                onClick: onLogout,
+                style: { fontSize: 11, color: t.textTertiary, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: t.font.body },
+              }, 'Sign out')
+            )
+          )
+        : React.createElement('button', {
+            onClick: onLogin,
+            style: {
+              width: '100%', padding: '10px', borderRadius: 10,
+              background: t.primary, border: 'none',
+              color: '#fff', fontSize: 13, fontWeight: 600,
+              fontFamily: t.font.body, cursor: 'pointer',
+            },
+          }, 'Sign in')
+    )
+  );
+}
+
 Object.assign(window, {
   BottomNav, SearchBar, FilterChips, BudgetSlider, BudgetPresets,
   PlaceCard, VerifiedBadge, PriceTag, MapPin, BottomSheet,
   StarRating, MenuItemRow, SuggestionPill,
+  useIsDesktop, SidebarNav,
 });
